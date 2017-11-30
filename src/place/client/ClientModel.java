@@ -142,4 +142,10 @@ public class ClientModel extends Observable{
         }
         return s;
     }
+
+    public boolean isValid(int r, int c, String color) {
+        return (r>=0||r<=rows) && (c>=0 || c <=cols) &&
+                (int)color.charAt(0)>=48||(int)color.charAt(0)<=57 &&
+                (int)color.charAt(0)>=65||(int)color.charAt(0)<=70;
+    }
 }

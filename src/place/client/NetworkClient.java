@@ -1,6 +1,7 @@
 package place.client;
 
 import place.PlaceException;
+import place.PlaceTile;
 import sun.nio.ch.Net;
 
 import java.io.IOException;
@@ -72,5 +73,20 @@ public class NetworkClient {
         if(NetworkClient.DEBUG){
             System.out.println(logMsg);
         }
+    }
+
+    public void close() {
+        try {
+            this.sock.close();
+        }
+
+        catch (IOException e) {
+
+        }
+        this.model.close();
+    }
+
+    public void sendMove(int r, int c, String color, String un) {
+        //this.networkOut.println(new PlaceTile(r,c,un,color));
     }
 }
