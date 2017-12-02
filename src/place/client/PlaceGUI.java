@@ -53,6 +53,8 @@ public class PlaceGUI extends Application implements Observer {
             throw new RuntimeException(e);
         }
     }
+
     public void start(Stage mainstage ) {
+
     }
 }

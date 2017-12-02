@@ -38,7 +38,6 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
         this.userOut = userOut;
         this.board.addObserver(this);
         this.refresh();
-
     }
 
     public void stop() {
@@ -58,12 +57,12 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
             this.userOut.println(this.userIn.nextLine());
             this.serverConn.sendMove(row, col, color, username);
         }
-
     }
 
     @Override
     public void update(Observable t, Object o) {
-
+        assert t == this.board: "Update from non-model Observable";
+        this.refresh();
     }
 
 }
