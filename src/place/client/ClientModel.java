@@ -10,16 +10,11 @@ public class ClientModel extends Observable{
     }
 
     private ClientModel.colors[][] board;
-    private int rows;
-    private int cols;
+    private int dim;
     private final static int MINDIM = 5;
 
-    private int getRows(){
-        return rows;
-    }
-
-    private int getCols(){
-        return cols;
+    public int getDim(){
+        return dim;
     }
 
     public void allocate(int dim) throws  PlaceException{
@@ -27,13 +22,12 @@ public class ClientModel extends Observable{
             throw new PlaceException("Board too small");
         }
         this.board = new ClientModel.colors[dim][dim];
-        this.rows = dim;
-        this.cols = dim;
+        this.dim = dim;
     }
 
     public void initializeGame(){
-        for(int x = 0; x < rows; ++x){
-            for(int y = 0; y < cols; ++y){
+        for(int x = 0; x < dim; ++x){
+            for(int y = 0; y < dim; ++y){
                 board[x][y] = colors.THREE;
             }
         }
@@ -100,8 +94,8 @@ public class ClientModel extends Observable{
 
     public String toString(){
         String s = "";
-        for(int x = 0; x < rows; ++x){
-            for(int y = 0; y < cols; ++y){
+        for(int x = 0; x < dim; ++x){
+            for(int y = 0; y < dim; ++y){
                 switch (board[x][y]){
                     case ZERO:
                         s+= "0 ";
@@ -144,7 +138,7 @@ public class ClientModel extends Observable{
     }
 
     public boolean isValid(int r, int c, String color) {
-        return (r>=0||r<=rows) && (c>=0 || c <=cols) &&
+        return (r>=0||r<=dim) && (c>=0 || c <=dim) &&
                 (int)color.charAt(0)>=48||(int)color.charAt(0)<=57 &&
                 (int)color.charAt(0)>=65||(int)color.charAt(0)<=70;
     }

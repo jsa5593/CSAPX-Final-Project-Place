@@ -1,5 +1,7 @@
 package place;
 
+import javafx.scene.canvas.Canvas;
+
 import java.io.Serializable;
 
 /**
@@ -8,7 +10,7 @@ import java.io.Serializable;
  *
  * @author Sean Strout @ RIT CS
  */
-public class PlaceTile implements Serializable {
+public class PlaceTile extends Canvas implements Serializable {
     /** the row */
     private int row;
     /** the column */

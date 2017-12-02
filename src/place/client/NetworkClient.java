@@ -22,7 +22,7 @@ public class NetworkClient {
     private Boolean go;
     private static final Boolean DEBUG = false;
 
-    public NetworkClient(String hostname, int port, ClientModel model) throws PlaceException{
+    public NetworkClient(String hostname, int port, ClientModel model, String user) throws PlaceException{
         try{
             this.sock = new Socket(hostname, port);
             this.networkIn = new Scanner(sock.getInputStream());
@@ -34,6 +34,7 @@ public class NetworkClient {
             assert request.equals(PlaceProtocol.CONNECT);
             NetworkClient.dPrint("Connected to server "+this.sock);
             this.connect(arguments);
+            networkOut.println(LOGIN+user);
             Thread netThread = new Thread(() -> this.run());
             netThread.start();
         }

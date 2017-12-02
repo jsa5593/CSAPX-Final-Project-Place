@@ -1,6 +1,7 @@
 package place.client;
 
 import place.PlaceException;
+import place.PlaceProtocol;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -24,7 +25,7 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
             String host = args.get(0);
             int port = Integer.parseInt(args.get(1));
             this.board = new ClientModel();
-            this.serverConn = new NetworkClient(host, port, this.board);
+            this.serverConn = new NetworkClient(host, port, this.board, username);
             this.board.initializeGame();
         }
         catch (PlaceException | ArrayIndexOutOfBoundsException | NumberFormatException e) {
