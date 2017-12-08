@@ -3,8 +3,14 @@ package place.client;
 import javafx.application.Application;
 import place.PlaceException;
 import place.PlaceProtocol;
+import place.network.NetworkServer;
+import place.network.PlaceRequest;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
@@ -15,9 +21,12 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
 
     private String username;
     private ClientModel board;
-    private NetworkClient serverConn;
+    private NetworkServer serverConn;
     private Scanner userIn;
     private PrintWriter userOut;
+    private ObjectInputStream input;
+    private ObjectOutputStream output;
+    private Socket sock;
 
     public void init() {
         try {
@@ -27,14 +36,17 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
             String host = args.get(0);
             int port = Integer.parseInt(args.get(1));
             System.out.println(port);
-            this.board = new ClientModel();
-            System.out.println("board");
-            this.serverConn = new NetworkClient(host, port, this.board, username);
+            sock = new Socket(host, port);
+            input = new ObjectInputStream(sock.getInputStream());
+            output = new ObjectOutputStream(sock.getOutputStream());
+            this.serverConn = new NetworkServer(host, port, username);
             System.out.println("serverConn");
-            this.board.initializeGame();
-            System.out.println(board);
+            PlaceRequest<?> req = (PlaceRequest<?>)input.readObject();
+            if (req.getType() == PlaceRequest.RequestType.BOARD){
+                this.board = (ClientModel)req.getData();
+            }
         }
-        catch (PlaceException | ArrayIndexOutOfBoundsException | NumberFormatException e) {
+        catch (PlaceException | ArrayIndexOutOfBoundsException | NumberFormatException | IOException | ClassNotFoundException e) {
             System.out.print(e);
             throw new RuntimeException(e);
         }

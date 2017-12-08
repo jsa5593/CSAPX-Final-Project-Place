@@ -15,6 +15,7 @@ import javafx.scene.paint.Color;
 import place.PlaceColor;
 import place.PlaceException;
 import place.PlaceTile;
+import place.network.NetworkServer;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -28,7 +29,7 @@ import java.util.Observable;
 public class PlaceGUI extends Application implements Observer {
 
     private ClientModel model;
-    private NetworkClient serverConn;
+    private NetworkServer serverConn;
     private Map<String, String> params = null;
     private String username;
     private PlaceColor color = PlaceColor.WHITE;
@@ -63,7 +64,7 @@ public class PlaceGUI extends Application implements Observer {
             model = new ClientModel();
             // addObserver(this);
             // Create the network connection.
-            this.serverConn = new NetworkClient( host, port, model, username );
+            this.serverConn = new NetworkServer( host, port, model, username );
 
             model.initializeGame();
         }
