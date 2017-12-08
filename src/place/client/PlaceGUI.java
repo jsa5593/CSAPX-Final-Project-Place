@@ -2,7 +2,9 @@ package place.client;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.scene.control.Button;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -15,6 +17,10 @@ import place.PlaceException;
 import place.PlaceTile;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.sql.Time;
+import java.time.LocalTime;
+import java.util.Date;
 import java.util.Map;
 import java.util.Observer;
 import java.util.Observable;
@@ -25,6 +31,7 @@ public class PlaceGUI extends Application implements Observer {
     private NetworkClient serverConn;
     private Map<String, String> params = null;
     private String username;
+    private PlaceColor color = PlaceColor.WHITE;
 
     private String getParamNamed( String name ) throws PlaceException {
         if ( params == null ) {
@@ -72,14 +79,29 @@ public class PlaceGUI extends Application implements Observer {
         for (int x = 0; x < model.getDim(); ++x){
             for (int y =0; y < model.getDim(); ++y) {
                PlaceTile temp = new PlaceTile(x, y, username, PlaceColor.WHITE);
+               temp.setOnMouseClicked(event -> {
+                   LocalTime time = LocalTime.now();
+                   temp.setColor(color);
+                   temp.setOwner(username);
+                   temp.setTime(time.toNanoOfDay());
+                });
+               temp.setOnDragOver(event -> {
+                   Date date = new Date();
+                   LocalTime time = LocalTime.now();
+                   Tooltip popup = new Tooltip();
+                   popup.setText("("+temp.getRow()+","+temp.getCol()+")\n"+username+"\n"+date+"\n"+time);
+               });
                tiles.add(temp, x, y);
-               //setonmouseclicked
             }
         }
         GridPane colors = new GridPane();
         for (PlaceColor c: PlaceColor.values()){
             StackPane s = new StackPane();
             Rectangle b = new Rectangle();
+            b.setOnMouseClicked(event -> {
+                color = c;
+            });
+            //call meathod to switch color pass in "swatch"
             int i = 0;
             b.setFill(Color.rgb(c.getRed(),c.getGreen(),c.getBlue()));
             Text t;

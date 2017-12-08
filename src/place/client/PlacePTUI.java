@@ -1,5 +1,6 @@
 package place.client;
 
+import javafx.application.Application;
 import place.PlaceException;
 import place.PlaceProtocol;
 
@@ -20,13 +21,18 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
 
     public void init() {
         try {
+            System.out.println("init");
             List<String> args = super.getArguments();
             username = args.get(2);
             String host = args.get(0);
             int port = Integer.parseInt(args.get(1));
+            System.out.println(port);
             this.board = new ClientModel();
+            System.out.println("board");
             this.serverConn = new NetworkClient(host, port, this.board, username);
+            System.out.println("serverConn");
             this.board.initializeGame();
+            System.out.println(board);
         }
         catch (PlaceException | ArrayIndexOutOfBoundsException | NumberFormatException e) {
             System.out.print(e);
@@ -65,5 +71,8 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
         assert t == this.board: "Update from non-model Observable";
         this.refresh();
     }
+
+    public static void main(String[] args){
+        ConsoleApplication.launch(PlacePTUI.class, args);}
 
 }

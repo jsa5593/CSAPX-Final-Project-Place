@@ -26,6 +26,7 @@ public class ClientModel extends Observable{
     }
 
     public void initializeGame(){
+        System.out.println("initialize game");
         for(int x = 0; x < dim; ++x){
             for(int y = 0; y < dim; ++y){
                 board[x][y] = colors.THREE;
@@ -93,39 +94,43 @@ public class ClientModel extends Observable{
     }
 
     public String toString(){
+        System.out.println("String");
         String s = "";
         for(int x = 0; x < dim; ++x){
+            System.out.print(dim);
             for(int y = 0; y < dim; ++y){
+                System.out.print("before switch");
                 switch (board[x][y]){
                     case ZERO:
-                        s+= "0 ";
+                        s.concat("0 ");
+                        System.out.print(s);
                         break;
                     case ONE:
                         s += "1 ";
                         break;
                     case TWO:
-                        s+= "2 ";
+                        s += "2 ";
                         break;
                     case THREE:
                         s += "3 ";
                         break;
                     case FOUR:
-                        s+= "4 ";
+                        s += "4 ";
                         break;
                     case FIVE:
                         s += "5 ";
                         break;
                     case SIX:
-                        s+= "6 ";
+                        s += "6 ";
                         break;
                     case SEVEN:
                         s += "7 ";
                         break;
                     case EIGHT:
-                        s+= "8 ";
+                        s += "8 ";
                         break;
                     case NINE:
-                        s += "9 ";
+                        s.concat("9 ");
                         break;
                     default:
                         s += board[x][y]+" ";
