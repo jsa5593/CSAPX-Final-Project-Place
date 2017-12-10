@@ -1,65 +1,69 @@
 package place.client;
 
-import place.PlaceException;
-import place.PlaceTile;
-import sun.nio.ch.Net;
+import place.*;
+import place.network.PlaceRequest;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.HashSet;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
-import place.PlaceProtocol;
-
 import static place.PlaceProtocol.*;
 
 public class NetworkClient {
 
     private Socket sock;
-    private ObjectInputStream networkIn;
-    private ObjectOutputStream networkOut;
-    private ClientModel model;
+    private PrintWriter toThread;
+    private PlaceBoard model;
     private Boolean go;
     private static final Boolean DEBUG = false;
+    private boolean connectionOpen;
     private static HashSet<String> usernames;
+    private static String user;
+    private ObjectOutputStream networkOut;
+    private ObjectInputStream networkIn;
 
-    public NetworkClient(String hostname, int port, ClientModel model, String user) throws PlaceException{
+    //pass protocol
+    public NetworkClient(String hostname, int port, String user) throws PlaceException{
         try{
+            connectionOpen = true;
+            System.out.println("network client");
             usernames = new HashSet<>();
             this.sock = new Socket(hostname, port);
-            System.out.println("socket");
-            System.out.println("networkClient try");
-            this.networkIn = new ObjectInputStream(sock.getInputStream());
-            System.out.println("object input");
-            this.networkOut = new ObjectOutputStream(sock.getOutputStream());
-            System.out.println(user);
-            System.out.println(usernames);
-            if (!usernames.contains(user)) {
-                System.out.println("networkClient !contain");
-                usernames.add(user);
-                networkOut.writeUnshared(user);
-                System.out.println("write user");
-                networkOut.flush();
-                System.out.println("flush");
-            }
-            else {
-                System.err.print("Username taken");
-                System.exit(-1);
-            }
-            System.out.println("scanner/print");
-            this.model = model;
-            System.out.println("model");
+            System.out.println("network client sock");
+            this.user = user;
             this.go = true;
-            networkOut.writeUnshared(LOGIN+user);
+
+            System.out.println("b4 obj streams");
+            networkOut = new ObjectOutputStream(sock.getOutputStream());
+            networkOut.flush();
+            System.out.println("obj out streams");
+
+            //Sending username
+            PlaceRequest<String> login = new PlaceRequest<>(PlaceRequest.RequestType.LOGIN, user);
+            System.out.println(login);
+            networkOut.writeUnshared(login);
+            networkOut.flush();
+
+            System.out.println("send username");
+
+            networkIn = new ObjectInputStream(sock.getInputStream());
+            System.out.println("network in");
+
+            PlaceRequest<?> req = (PlaceRequest<?>) networkIn.readUnshared();
+            System.out.println("req" +req);
+            if(req.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS){
+                System.out.println("Success");
+            }
+
             Thread netThread = new Thread(() -> this.run());
             netThread.start();
         }
-        catch (IOException e){
+        catch (IOException | ClassNotFoundException e){
             throw new PlaceException(e);
         }
+    }
+
+    public Socket getSock(){
+        return sock;
     }
 
     private synchronized boolean goodToGo(){
@@ -67,25 +71,19 @@ public class NetworkClient {
     }
 
     private void run(){
-        try {
-            String request = (String)this.networkIn.readUnshared();
-            String arguments = (String)this.networkIn.readUnshared();
-            arguments = arguments.trim();
-            assert request.equals(PlaceProtocol.CONNECT);
-            NetworkClient.dPrint("Connected to server "+this.sock);
-            this.connect(arguments);
-            NetworkClient.dPrint("Net message in = \"" + request + '"');
+        while (connectionOpen) {
+            try {
 
-            switch(request) {
-                case (LOGIN):
-                    break;
-                case (LOGIN_SUCCESSFUL):
-                    break;
+
+                NetworkClient.dPrint("Connected to server "+this.sock);
             }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+
         }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.close();
+
     }
 
     public void connect(String arguments) throws PlaceException{
@@ -106,10 +104,19 @@ public class NetworkClient {
         catch (IOException e) {
 
         }
-        this.model.close();
     }
 
-    public void sendMove(int r, int c, String color, String un) {
+    public synchronized void sendMove(int r, int c, PlaceColor color, String un) {
         //this.networkOut.println(new PlaceTile(r,c,un,color));
+        System.out.println("send move");
+        PlaceTile tile = new PlaceTile(r, c, un, color);
+        try {
+            networkOut.writeUnshared(tile);
+
+        }
+        catch (IOException e) {
+
+        }
+
     }
 }

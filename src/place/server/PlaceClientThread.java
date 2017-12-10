@@ -1,34 +1,39 @@
 package place.server;
 
-import place.client.ClientModel;
-import place.network.PlaceRequest;
+import place.PlaceBoard;
+import place.PlaceColor;
+import place.PlaceException;
+import place.PlaceTile;
+import place.client.NetworkClient;
+import place.client.PlacePTUI;
 
 import java.net.*;
 import java.io.*;
+import java.util.HashMap;
+import java.util.Scanner;
 
-public class PlaceClientThread extends Thread{
+public class PlaceClientThread extends Thread {
 
-        private Socket socket = null;
-        private int dim;
-        private ClientModel board;
+    private Socket socket;
+    private int dim;
+    private PlaceBoard board;
+    private Scanner scannerReader;
+    private PrintWriter output;
 
-        public PlaceClientThread(Socket socket) {
-            super("Place Client Thread");
-            this.socket = socket;
-        }
+    public PlaceClientThread(Socket socket) {
+        super("Place Client Thread");
+        System.out.println("makes client thread");
+        this.socket = socket;
+    }
 
-        public void run() {
-            try (
-                    ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-                    ObjectInputStream in = new ObjectInputStream(socket.getInputStream())
-            ) {
-                boolean go = true;
-                while (go) {//run while screen is open
-
-                }
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+    public void run() {
+        try  {
+            boolean go = true;
+            while (go) {
             }
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+    }
 }

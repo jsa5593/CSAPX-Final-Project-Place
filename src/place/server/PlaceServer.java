@@ -1,24 +1,29 @@
 package place.server;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
+import place.PlaceBoard;
 import place.PlaceException;
 import place.PlaceProtocol;
-import place.client.ClientModel;
-
+import place.PlaceTile;
+import place.network.PlaceRequest;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class PlaceServer implements PlaceProtocol, Closeable{
 
     private ServerSocket server;
     private static ObjectOutputStream out;
     private static ObjectInputStream in;
-
+    private static PlaceBoard model;
+    private static HashSet<String> usernames;
+    private static PlaceTile changeTile;
+    private static HashMap<String, ObjectOutputStream> clientOuts;
     public PlaceServer(int port) throws PlaceException{
         try {
             this.server = new ServerSocket(port);
@@ -37,6 +42,48 @@ public class PlaceServer implements PlaceProtocol, Closeable{
         }
     }
 
+    public void run(int dim, int portNumber, boolean listening){
+        try {
+            System.out.println("try");
+
+            in = new ObjectInputStream(server.accept().getInputStream());
+            System.out.println("obj in");
+            while (listening) {
+                System.out.println("Waiting on connection");
+                //Get login
+                PlaceRequest<?> req = (PlaceRequest<?>) in.readUnshared();
+                System.out.println("req"+req);
+                if(req.getType() == PlaceRequest.RequestType.LOGIN){
+                    System.out.println(req.getData());
+                    if(!usernames.contains(req.getData())){
+                        Socket sock = new Socket(InetAddress.getLocalHost(), portNumber);
+                        out = new ObjectOutputStream(sock.getOutputStream());
+                        out.flush();
+                        usernames.add((String)req.getData());
+                        System.out.println("username: "+req.getData());
+                        clientOuts.put((String)req.getData(), out);
+                        PlaceRequest<String> loginSuccess = new PlaceRequest<>(PlaceRequest.RequestType.LOGIN_SUCCESS, (String)req.getData());
+                        out.writeUnshared(loginSuccess);
+                        System.out.println("loginsuccess "+loginSuccess);
+                        out.flush();
+                        model = new PlaceBoard(dim);
+                        System.out.println("model"+model);
+                        PlaceClientThread thread = new PlaceClientThread(server.accept());
+                        thread.start();
+                    }
+                    else {
+                        PlaceRequest<String>error = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "Username Taken");
+                        out.writeUnshared(error);
+                        out.flush();
+                    }
+                }
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Could not listen on port " + portNumber);
+            System.exit(-1);
+        }
+    }
+
     public static void main(String[] args) throws IOException {
 
         if (args.length != 2) {
@@ -47,19 +94,18 @@ public class PlaceServer implements PlaceProtocol, Closeable{
         int portNumber = Integer.parseInt(args[0]);
         int dim = Integer.parseInt(args[1]);
         boolean listening = true;
-        ClientModel model = new ClientModel();
 
-        try (ServerSocket serverSocket = new ServerSocket(portNumber)) {
-            while (listening) {
-                System.out.println("Waiting on connection");
-                new PlaceClientThread(serverSocket.accept()).start();
-                model.allocate(dim);
-                String user = (String)in.readUnshared();
-                System.out.println("User: "+user+"Connection on port: "+portNumber);
-            }
-        } catch (IOException | PlaceException | ClassNotFoundException e) {
-            System.err.println("Could not listen on port " + portNumber);
-            System.exit(-1);
+        usernames = new HashSet<>();
+        clientOuts = new HashMap<>();
+
+        try {
+            PlaceServer server = new PlaceServer(portNumber);
+            server.run(dim, portNumber, listening);
         }
+        catch (PlaceException e){
+            System.err.println("Can't connect to server");
+            e.printStackTrace();
+        }
+
     }
 }

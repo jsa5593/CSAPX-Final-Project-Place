@@ -3,6 +3,7 @@ package place.client;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
@@ -29,10 +30,10 @@ import java.util.Observable;
 public class PlaceGUI extends Application implements Observer {
 
     private ClientModel model;
-    private NetworkServer serverConn;
     private Map<String, String> params = null;
     private String username;
     private PlaceColor color = PlaceColor.WHITE;
+    private NetworkClient serverConn;
 
     private String getParamNamed( String name ) throws PlaceException {
         if ( params == null ) {
@@ -61,10 +62,12 @@ public class PlaceGUI extends Application implements Observer {
             String host = getParamNamed("host");
             int port = Integer.parseInt(getParamNamed("port"));
             username = getParamNamed("username");
+            serverConn = new NetworkClient(host, port, username);
             model = new ClientModel();
+            System.out.println("Connected to server "+serverConn.getSock());
             // addObserver(this);
             // Create the network connection.
-            this.serverConn = new NetworkServer( host, port, model, username );
+            //this.serverConn = new NetworkServer( host, port, model, username );
 
             model.initializeGame();
         }
@@ -134,9 +137,9 @@ public class PlaceGUI extends Application implements Observer {
             ++i;
             //setonmouseclicked
         }
-    }
-
-    public void refresh() {
+        Scene scene = new Scene(tiles, 50, 50);
+        mainstage.setScene(scene);
+        mainstage.show();
 
     }
 

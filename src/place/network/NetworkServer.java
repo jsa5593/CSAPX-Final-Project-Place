@@ -23,48 +23,24 @@ public class NetworkServer {
     private Socket sock;
     private ObjectInputStream networkIn;
     private ObjectOutputStream networkOut;
-    private ClientModel model;
+    private PlaceBoard model;
     private Boolean go;
+    private int dim;
     private static final Boolean DEBUG = false;
-    private static HashSet<String> usernames;
 
     public NetworkServer(String hostname, int port, String user) throws PlaceException{
         try{
-            usernames = new HashSet<>();
             this.sock = new Socket(hostname, port);
-            System.out.println("socket");
-            System.out.println("NetworkServer try");
             this.networkIn = new ObjectInputStream(sock.getInputStream());
-            System.out.println("object input");
             this.networkOut = new ObjectOutputStream(sock.getOutputStream());
-            System.out.println(user);
-            System.out.println(usernames);
-            if (!usernames.contains(user)) {
-                System.out.println("NetworkServer !contain");
-                usernames.add(user);
-                networkOut.writeUnshared(user);
-                System.out.println("write user");
-                networkOut.flush();
-                System.out.println("flush");
-            }
-            else {
-                System.err.print("Username taken");
-                System.exit(-1);
-            }
-            System.out.println("scanner/print");
-            this.model = new ClientModel();
-            PlaceRequest<PlaceBoard> boardReq = new PlaceRequest<PlaceBoard>(PlaceRequest.RequestType.BOARD, model);
-            this.model.initializeGame();
-            networkOut.writeObject(boardReq);
-            networkOut.flush();
-            System.out.println(model);
-            System.out.println("model");
+            model = (PlaceBoard)networkIn.readUnshared();
+            networkOut.writeUnshared(model);
             this.go = true;
             networkOut.writeUnshared(LOGIN+user);
             Thread netThread = new Thread(() -> this.run());
             netThread.start();
         }
-        catch (IOException e){
+        catch (IOException | ClassNotFoundException e){
             throw new PlaceException(e);
         }
     }
@@ -75,6 +51,19 @@ public class NetworkServer {
 
     private void run(){
         try {
+            PlaceRequest<?> req = (PlaceRequest<?>) networkIn.readObject();
+            if (req.getType() == PlaceRequest.RequestType.CHANGE_TILE) {
+                PlaceTile tile = (PlaceTile) req.getData();
+            }
+            else if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED){
+
+            }
+
+            else if (req.getType() == PlaceRequest.RequestType.BOARD) {
+
+            }
+
+
             String request = (String)this.networkIn.readUnshared();
             String arguments = (String)this.networkIn.readUnshared();
             arguments = arguments.trim();
@@ -113,10 +102,9 @@ public class NetworkServer {
         catch (IOException e) {
 
         }
-        this.model.close();
     }
 
-    public void sendMove(int r, int c, String color, String username) {
+    public synchronized void sendMove(int r, int c, String color, String username) {
         //this.networkOut.println(new PlaceTile(r,c,un,color));
     }
 }
