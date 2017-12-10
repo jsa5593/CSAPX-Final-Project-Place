@@ -1,6 +1,7 @@
 package place.client;
 
 import place.PlaceBoard;
+import place.PlaceColor;
 import place.PlaceException;
 
 import java.io.IOException;
@@ -14,13 +15,12 @@ import java.util.Scanner;
 public class PlacePTUI extends ConsoleApplication implements Observer{
 
     private String username;
-    private ClientModel board;
+    private ClientModel model;
     private NetworkClient serverConn;
     private Scanner userIn;
     private PrintWriter userOut;
     private String host;
     private int port;
-    private Socket sock;
 
     public void init() {
         try {
@@ -38,10 +38,17 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
         }
     }
 
+
+    //---------------------takes user input and sends it to NetworkClient
     public synchronized void go (Scanner userIn, PrintWriter userOut) {
         this.userIn = userIn;
         this.userOut = userOut;
-//        this.board.addObserver(this);
+        this.model.addObserver(this);
+        String[] inputs = userIn.nextLine().split(" ");
+        int row = Integer.parseInt(inputs[0]);
+        int col = Integer.parseInt(inputs[1]);
+        PlaceColor color = PlaceColor.valueOf(inputs[2]);
+        serverConn.sendMove(row, col, color, username);
         this.refresh();
     }
 
@@ -54,24 +61,13 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
 
     public void refresh() {
         System.out.println("refresh");
-        //this.userOut.println(this.board);
-        //this.userOut.println("Enter row, column, and color: ");
-        //this.userOut.flush();
-        //String input = userIn.nextLine();
-        //userOut.println(input+" "+username);
-
-        //System.out.println(input);
-        /*String color = this.userIn.nextLine();
-        if (this.board.isValid(row, col, color)) {
-            this.userOut.println(this.userIn.nextLine());
-            this.serverConn.sendMove(row, col, color, username);
-        }*/
+        System.out.println(model.printBoard());
     }
 
     @Override
     public void update(Observable t, Object o) {
         System.out.println("update");
-        assert t == this.board: "Update from non-model Observable";
+        assert t == this.model: "Update from non-model Observable";
         this.refresh();
     }
 

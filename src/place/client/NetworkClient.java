@@ -12,7 +12,8 @@ public class NetworkClient {
 
     private Socket sock;
     private PrintWriter toThread;
-    private PlaceBoard model;
+    private PlaceBoard board;
+    private ClientModel model;
     private Boolean go;
     private static final Boolean DEBUG = false;
     private boolean connectionOpen;
@@ -20,15 +21,19 @@ public class NetworkClient {
     private static String user;
     private ObjectOutputStream networkOut;
     private ObjectInputStream networkIn;
+    private String hostname;
+    private int port;
 
     //pass protocol
     public NetworkClient(String hostname, int port, String user) throws PlaceException{
         try{
+            this.hostname = hostname;
+            this.port = port;
             connectionOpen = true;
             System.out.println("network client");
             usernames = new HashSet<>();
             this.sock = new Socket(hostname, port);
-            System.out.println("network client sock");
+            System.out.println("network client sock: "+sock);
             this.user = user;
             this.go = true;
 
@@ -45,19 +50,9 @@ public class NetworkClient {
 
             System.out.println("send username");
 
-            networkIn = new ObjectInputStream(sock.getInputStream());
-            System.out.println("network in");
-
-            PlaceRequest<?> req = (PlaceRequest<?>) networkIn.readUnshared();
-            System.out.println("req" +req);
-            if(req.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS){
-                System.out.println("Success");
-            }
-
-            Thread netThread = new Thread(() -> this.run());
-            netThread.start();
+            run();
         }
-        catch (IOException | ClassNotFoundException e){
+        catch (IOException e){
             throw new PlaceException(e);
         }
     }
@@ -71,17 +66,47 @@ public class NetworkClient {
     }
 
     private void run(){
-        while (connectionOpen) {
-            try {
+        System.out.println("run method");
+        try {
+            this.sock = new Socket(hostname, port);
+            System.out.println(sock);
+            networkOut = new ObjectOutputStream(sock.getOutputStream());
+            networkOut.flush();
+            networkIn = new ObjectInputStream(sock.getInputStream());
+            System.out.println("network in");
+            while (connectionOpen) {
 
+                try {
+                    PlaceRequest<?> req = (PlaceRequest<?>) networkIn.readUnshared();
+                    System.out.println("req" +req);
+                    if(req.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS){
+                        System.out.println("Success");
+                    }
+                    else if (req.getType() == PlaceRequest.RequestType.BOARD){
+                        System.out.println("Board received");
+                    }
 
-                NetworkClient.dPrint("Connected to server "+this.sock);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
+                    else if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
+                        PlaceTile changedTile = (PlaceTile)req.getData();
+                        board.setTile(changedTile);
+
+                    }
+                    else if (req.getType() == PlaceRequest.RequestType.CHANGE_TILE) {
+
+                    }
+
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+
             }
 
         }
+        catch(IOException e) {
+
+        }
+
         this.close();
 
     }
@@ -98,6 +123,7 @@ public class NetworkClient {
 
     public void close() {
         try {
+            //logoff
             this.sock.close();
         }
 
@@ -112,7 +138,7 @@ public class NetworkClient {
         PlaceTile tile = new PlaceTile(r, c, un, color);
         try {
             networkOut.writeUnshared(tile);
-
+            networkOut.flush();
         }
         catch (IOException e) {
 

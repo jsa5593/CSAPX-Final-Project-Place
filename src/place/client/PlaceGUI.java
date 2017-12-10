@@ -2,12 +2,10 @@ package place.client;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
@@ -16,11 +14,6 @@ import javafx.scene.paint.Color;
 import place.PlaceColor;
 import place.PlaceException;
 import place.PlaceTile;
-import place.network.NetworkServer;
-
-import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.sql.Time;
 import java.time.LocalTime;
 import java.util.Date;
 import java.util.Map;
@@ -34,6 +27,7 @@ public class PlaceGUI extends Application implements Observer {
     private String username;
     private PlaceColor color = PlaceColor.WHITE;
     private NetworkClient serverConn;
+    private PlaceTile[][] tilesDisplay;
 
     private String getParamNamed( String name ) throws PlaceException {
         if ( params == null ) {
@@ -57,6 +51,14 @@ public class PlaceGUI extends Application implements Observer {
         //stuff
     }
 
+    public void refresh(){
+        for(int r = 0; r < model.getDim(); ++r){
+            for(int c = 0; c < model.getDim(); ++c){
+                tilesDisplay[r][c] = model.getContents(r, c);
+            }
+        }
+    }
+
     public void init() {
         try{
             String host = getParamNamed("host");
@@ -64,12 +66,8 @@ public class PlaceGUI extends Application implements Observer {
             username = getParamNamed("username");
             serverConn = new NetworkClient(host, port, username);
             model = new ClientModel();
+            tilesDisplay = new PlaceTile[model.getDim()][model.getDim()];
             System.out.println("Connected to server "+serverConn.getSock());
-            // addObserver(this);
-            // Create the network connection.
-            //this.serverConn = new NetworkServer( host, port, model, username );
-
-            model.initializeGame();
         }
         catch (PlaceException | ArrayIndexOutOfBoundsException | NumberFormatException e) {
             throw new RuntimeException(e);
@@ -82,12 +80,15 @@ public class PlaceGUI extends Application implements Observer {
         GridPane tiles = new GridPane();
         for (int x = 0; x < model.getDim(); ++x){
             for (int y =0; y < model.getDim(); ++y) {
-               PlaceTile temp = new PlaceTile(x, y, username, PlaceColor.WHITE);
-               temp.setOnMouseClicked(event -> {
+                PlaceTile temp;
+                temp = new PlaceTile(x, y, username, PlaceColor.WHITE);
+                tilesDisplay[x][y] = temp;
+                temp.setOnMouseClicked(event -> {
                    LocalTime time = LocalTime.now();
                    temp.setColor(color);
                    temp.setOwner(username);
                    temp.setTime(time.toNanoOfDay());
+                   serverConn.sendMove(temp.getRow(), temp.getCol(), temp.getColor(), temp.getOwner());
                 });
                temp.setOnDragOver(event -> {
                    Date date = new Date();
@@ -137,7 +138,10 @@ public class PlaceGUI extends Application implements Observer {
             ++i;
             //setonmouseclicked
         }
-        Scene scene = new Scene(tiles, 50, 50);
+        BorderPane background = new BorderPane();
+        background.setCenter(tiles);
+        background.setBottom(colors);
+        Scene scene = new Scene(background, 500, 500);
         mainstage.setScene(scene);
         mainstage.show();
 
@@ -145,6 +149,7 @@ public class PlaceGUI extends Application implements Observer {
 
     public void stop() {
 
+        serverConn.close();
     }
 
     public static void main(String[] args) { Application.launch(args); }

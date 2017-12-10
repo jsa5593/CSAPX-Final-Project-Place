@@ -46,8 +46,10 @@ public class PlaceServer implements PlaceProtocol, Closeable{
         try {
             System.out.println("try");
 
+            System.out.println(server);
             in = new ObjectInputStream(server.accept().getInputStream());
             System.out.println("obj in");
+            System.out.println(server.accept());
             while (listening) {
                 System.out.println("Waiting on connection");
                 //Get login
@@ -57,17 +59,22 @@ public class PlaceServer implements PlaceProtocol, Closeable{
                     System.out.println(req.getData());
                     if(!usernames.contains(req.getData())){
                         Socket sock = new Socket(InetAddress.getLocalHost(), portNumber);
+                        System.out.println(sock);
                         out = new ObjectOutputStream(sock.getOutputStream());
                         out.flush();
+                        System.out.println("obj out");
                         usernames.add((String)req.getData());
                         System.out.println("username: "+req.getData());
-                        clientOuts.put((String)req.getData(), out);
+                        clientOuts.put((String)req.getData(), new ObjectOutputStream(sock.getOutputStream()));
                         PlaceRequest<String> loginSuccess = new PlaceRequest<>(PlaceRequest.RequestType.LOGIN_SUCCESS, (String)req.getData());
                         out.writeUnshared(loginSuccess);
                         System.out.println("loginsuccess "+loginSuccess);
                         out.flush();
                         model = new PlaceBoard(dim);
                         System.out.println("model"+model);
+                        PlaceRequest<PlaceBoard> board = new PlaceRequest<>(PlaceRequest.RequestType.BOARD, model);
+                        out.writeUnshared(board);
+                        out.flush();
                         PlaceClientThread thread = new PlaceClientThread(server.accept());
                         thread.start();
                     }
@@ -76,6 +83,14 @@ public class PlaceServer implements PlaceProtocol, Closeable{
                         out.writeUnshared(error);
                         out.flush();
                     }
+                }
+                else if (req.getType() == PlaceRequest.RequestType.CHANGE_TILE) {
+                    PlaceTile newTile = (PlaceTile) req.getData();
+                    model.setTile(newTile);
+                    PlaceRequest<PlaceTile> tileChanged = new PlaceRequest<>(PlaceRequest.RequestType.TILE_CHANGED, newTile);
+                    out.writeUnshared(tileChanged);
+                    out.flush();
+                    //thread.sleep(500);
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
