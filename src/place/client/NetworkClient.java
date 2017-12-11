@@ -58,17 +58,26 @@ public class NetworkClient {
     public void run(){
         while (connectionOpen) {
             try {
+                connectionOpen = false;
+                System.out.println("run");
                 PlaceRequest<?> req = (PlaceRequest<?>) networkIn.readUnshared();
+                System.out.println(req);
                 if (req.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS) {
-                } else if (req.getType() == PlaceRequest.RequestType.BOARD) {
+                    System.out.println("login Success");
+                }
+                else if (req.getType() == PlaceRequest.RequestType.BOARD) {
                     this.board = new PlaceBoard(((PlaceBoard) req.getData()).DIM);
                     this.model.allocate(this.board);
-                } else if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
+                }
+                else if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
                     PlaceTile changedTile = (PlaceTile) req.getData();
                     board.setTile(changedTile);
-                } else if (req.getType() == PlaceRequest.RequestType.CHANGE_TILE) {
                 }
-            } catch (Exception e) {
+                else if (req.getType() == PlaceRequest.RequestType.CHANGE_TILE) {
+
+                }
+            }
+            catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -108,8 +117,8 @@ public class NetworkClient {
         try {
             System.out.println(changeTile);
             networkOut.writeUnshared(changeTile);
-            networkOut.flush();
             networkOut.reset();
+            networkOut.flush();
             System.out.println("sent");
         }
         catch (IOException e) {
