@@ -61,12 +61,12 @@ public class NetworkClient {
                 connectionOpen = false;
                 System.out.println("run");
                 PlaceRequest<?> req = (PlaceRequest<?>) networkIn.readUnshared();
-                System.out.println(req);
+                System.out.println(req.getType());
                 if (req.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS) {
                     System.out.println("login Success");
                 }
                 else if (req.getType() == PlaceRequest.RequestType.BOARD) {
-                    this.board = new PlaceBoard(((PlaceBoard) req.getData()).DIM);
+                    this.board = (PlaceBoard)req.getData();
                     this.model.allocate(this.board);
                 }
                 else if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED) {

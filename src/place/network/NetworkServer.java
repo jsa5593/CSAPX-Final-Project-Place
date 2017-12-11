@@ -57,6 +57,7 @@ public class NetworkServer {
             clientOuts.put(username, out);
             System.out.println(model);
             PlaceRequest<PlaceBoard> board = new PlaceRequest<>(PlaceRequest.RequestType.BOARD, model);
+            System.out.println(board.getType());
             for (ObjectOutputStream o: clientOuts.values()){
                 try {
                     o.writeUnshared(board);

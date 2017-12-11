@@ -39,34 +39,37 @@ public class PlaceClientThread extends Thread {
     }
 
     public void run() {
-        try {
-            PlaceRequest<?> req = (PlaceRequest<?>) in.readUnshared();
-            if(req.getType() == PlaceRequest.RequestType.LOGIN){
-                if(networkServer.logIn((String) req.getData(), out)){
-                    System.out.println(req.getData()+" connected: "+socket.getLocalAddress()+":"+socket.getPort());
-                    PlaceRequest<String> loginSuccess = new PlaceRequest<>(PlaceRequest.RequestType.LOGIN_SUCCESS, (String)req.getData());
-                    out.writeUnshared(loginSuccess);
-                    out.flush();
+        while (true) {
+            try {
+                PlaceRequest<?> req = (PlaceRequest<?>) in.readUnshared();
+                if(req.getType() == PlaceRequest.RequestType.LOGIN){
+                    if(networkServer.logIn((String) req.getData(), out)){
+                        System.out.println(req.getData()+" connected: "+socket.getLocalAddress()+":"+socket.getPort());
+                        PlaceRequest<String> loginSuccess = new PlaceRequest<>(PlaceRequest.RequestType.LOGIN_SUCCESS, (String)req.getData());
+                        out.writeUnshared(loginSuccess);
+                        out.flush();
+                    }
+                    else {
+                        System.out.println("taken");
+                        PlaceRequest<String>error = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "Username Taken");
+                        out.writeUnshared(error);
+                        out.flush();
+                    }
                 }
-                else {
-                    System.out.println("taken");
-                    PlaceRequest<String>error = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "Username Taken");
-                    out.writeUnshared(error);
+                else if (req.getType() == PlaceRequest.RequestType.CHANGE_TILE) {
+                    System.out.println(req.getData());
+                    System.out.println("Change tile");
+                    PlaceTile newTile = (PlaceTile) req.getData();
+                    networkServer.makeMove(newTile);
+                    PlaceRequest<PlaceTile> tileChanged = new PlaceRequest<>(PlaceRequest.RequestType.TILE_CHANGED, newTile);
+                    out.writeUnshared(tileChanged);
                     out.flush();
                 }
             }
-            else if (req.getType() == PlaceRequest.RequestType.CHANGE_TILE) {
-                System.out.println(req.getData());
-                System.out.println("Change tile");
-                PlaceTile newTile = (PlaceTile) req.getData();
-                networkServer.makeMove(newTile);
-                PlaceRequest<PlaceTile> tileChanged = new PlaceRequest<>(PlaceRequest.RequestType.TILE_CHANGED, newTile);
-                out.writeUnshared(tileChanged);
-                out.flush();
-            }
-        }
-        catch(ClassNotFoundException | IOException e) {
+            catch(ClassNotFoundException | IOException e) {
 
+            }
         }
+
     }
 }
