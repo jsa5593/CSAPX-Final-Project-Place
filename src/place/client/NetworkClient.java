@@ -1,5 +1,6 @@
 package place.client;
 
+import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 import place.*;
 import place.network.PlaceRequest;
 
@@ -11,7 +12,6 @@ import static place.PlaceProtocol.*;
 public class NetworkClient {
 
     private Socket sock;
-    private PrintWriter toThread;
     private PlaceBoard board;
     private ClientModel model;
     private Boolean go;
@@ -30,27 +30,17 @@ public class NetworkClient {
             this.hostname = hostname;
             this.port = port;
             connectionOpen = true;
-            System.out.println("network client");
             usernames = new HashSet<>();
             this.sock = new Socket(hostname, port);
-            System.out.println("network client sock: "+sock);
             this.user = user;
             this.go = true;
-
-            System.out.println("b4 obj streams");
+            this.model = new ClientModel();
             networkOut = new ObjectOutputStream(sock.getOutputStream());
             networkOut.flush();
-            System.out.println("obj out streams");
-
-            //Sending username
+            networkIn = new ObjectInputStream(sock.getInputStream());
             PlaceRequest<String> login = new PlaceRequest<>(PlaceRequest.RequestType.LOGIN, user);
-            System.out.println(login);
             networkOut.writeUnshared(login);
             networkOut.flush();
-
-            System.out.println("send username");
-
-            run();
         }
         catch (IOException e){
             throw new PlaceException(e);
@@ -65,50 +55,24 @@ public class NetworkClient {
         return this.go;
     }
 
-    private void run(){
-        System.out.println("run method");
-        try {
-            this.sock = new Socket(hostname, port);
-            System.out.println(sock);
-            networkOut = new ObjectOutputStream(sock.getOutputStream());
-            networkOut.flush();
-            networkIn = new ObjectInputStream(sock.getInputStream());
-            System.out.println("network in");
-            while (connectionOpen) {
-
-                try {
-                    PlaceRequest<?> req = (PlaceRequest<?>) networkIn.readUnshared();
-                    System.out.println("req" +req);
-                    if(req.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS){
-                        System.out.println("Success");
-                    }
-                    else if (req.getType() == PlaceRequest.RequestType.BOARD){
-                        System.out.println("Board received");
-                    }
-
-                    else if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
-                        PlaceTile changedTile = (PlaceTile)req.getData();
-                        board.setTile(changedTile);
-
-                    }
-                    else if (req.getType() == PlaceRequest.RequestType.CHANGE_TILE) {
-
-                    }
-
+    public void run(){
+        while (connectionOpen) {
+            try {
+                PlaceRequest<?> req = (PlaceRequest<?>) networkIn.readUnshared();
+                if (req.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS) {
+                } else if (req.getType() == PlaceRequest.RequestType.BOARD) {
+                    this.board = new PlaceBoard(((PlaceBoard) req.getData()).DIM);
+                    this.model.allocate(this.board);
+                } else if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
+                    PlaceTile changedTile = (PlaceTile) req.getData();
+                    board.setTile(changedTile);
+                } else if (req.getType() == PlaceRequest.RequestType.CHANGE_TILE) {
                 }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
         }
-        catch(IOException e) {
-
-        }
-
         this.close();
-
     }
 
     public void connect(String arguments) throws PlaceException{
@@ -126,19 +90,27 @@ public class NetworkClient {
             //logoff
             this.sock.close();
         }
-
         catch (IOException e) {
 
         }
+        this.model.close();
+    }
+
+    public PlaceBoard getBoard() {
+        return board;
     }
 
     public synchronized void sendMove(int r, int c, PlaceColor color, String un) {
         //this.networkOut.println(new PlaceTile(r,c,un,color));
         System.out.println("send move");
         PlaceTile tile = new PlaceTile(r, c, un, color);
+        PlaceRequest<PlaceTile> changeTile = new PlaceRequest<>(PlaceRequest.RequestType.CHANGE_TILE, tile);
         try {
-            networkOut.writeUnshared(tile);
+            System.out.println(changeTile);
+            networkOut.writeUnshared(changeTile);
             networkOut.flush();
+            networkOut.reset();
+            System.out.println("sent");
         }
         catch (IOException e) {
 

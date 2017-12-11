@@ -19,9 +19,16 @@ public class PlaceClientThread extends Thread {
     private PlaceBoard board;
     private Scanner scannerReader;
     private PrintWriter output;
+    private ObjectInputStream in;
 
     public PlaceClientThread(Socket socket) {
         super("Place Client Thread");
+        try{
+            in = new ObjectInputStream(socket.getInputStream());
+        }
+        catch (IOException e){
+
+        }
         System.out.println("makes client thread");
         this.socket = socket;
     }
@@ -30,6 +37,7 @@ public class PlaceClientThread extends Thread {
         try  {
             boolean go = true;
             while (go) {
+
             }
             socket.close();
         } catch (IOException e) {

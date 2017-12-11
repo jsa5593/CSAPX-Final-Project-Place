@@ -22,15 +22,18 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
     private String host;
     private int port;
 
+    @Override
     public void init() {
         try {
             List<String> args = super.getArguments();
             username = args.get(2);
             host = args.get(0);
             port = Integer.parseInt(args.get(1));
-            //this.sock = new Socket(host, port);
+            model = new ClientModel();
             this.serverConn = new NetworkClient(host, port, username);
-            System.out.println("Connected to server "+serverConn.getSock());
+            new Thread(() -> {
+                serverConn.run();
+            }).start();
         }
         catch (PlaceException | ArrayIndexOutOfBoundsException | NumberFormatException e) {
             System.out.print(e);
@@ -40,18 +43,28 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
 
 
     //---------------------takes user input and sends it to NetworkClient
+    @Override
     public synchronized void go (Scanner userIn, PrintWriter userOut) {
         this.userIn = userIn;
         this.userOut = userOut;
         this.model.addObserver(this);
-        String[] inputs = userIn.nextLine().split(" ");
-        int row = Integer.parseInt(inputs[0]);
-        int col = Integer.parseInt(inputs[1]);
-        PlaceColor color = PlaceColor.valueOf(inputs[2]);
-        serverConn.sendMove(row, col, color, username);
+        try {
+            Thread.sleep(1000);
+        }
+        catch (InterruptedException e) {
+        }
         this.refresh();
     }
 
+    public synchronized void run() {
+
+        this.model.addObserver(this);
+        System.out.println("GO");
+
+        this.refresh();
+    }
+
+    @Override
     public void stop() {
         //pass close and username to server
         userOut.close();
@@ -59,9 +72,29 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
         serverConn.close();
     }
 
-    public void refresh() {
+
+    private void refresh() {
         System.out.println("refresh");
-        System.out.println(model.printBoard());
+        while (true) {
+            System.out.println(model.printBoard());
+            System.out.println("Enter row col color or -1 to exit: ");
+            String[] inputs = userIn.nextLine().split(" ");
+            System.out.println(inputs);
+            if (inputs.length == 1) {
+                break;
+            } else if (inputs.length == 3) {
+                int row = Integer.parseInt(inputs[0]);
+                int col = Integer.parseInt(inputs[1]);
+                System.out.println(Integer.valueOf(inputs[2], 16).intValue());
+                PlaceColor color = PlaceColor.values()[Integer.decode(inputs[2])];
+                serverConn.sendMove(row, col, color, username);
+                try {
+                    Thread.sleep(500);
+                }
+                catch (InterruptedException e) {
+                }
+            }
+        }
     }
 
     @Override
@@ -72,6 +105,7 @@ public class PlacePTUI extends ConsoleApplication implements Observer{
     }
 
     public static void main(String[] args){
-        ConsoleApplication.launch(PlacePTUI.class, args);}
+        ConsoleApplication.launch(PlacePTUI.class, args);
+        System.out.println("launch method in ptui");}
 
 }

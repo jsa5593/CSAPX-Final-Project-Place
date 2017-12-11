@@ -14,7 +14,7 @@ public class ClientModel extends Observable{
         ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, A, B, C, D, E, F,
     }
 
-    private PlaceBoard board;
+    private static PlaceBoard board;
     //private ClientModel.colors[][] model;
     private int dim;
     private final static int MINDIM = 5;
@@ -23,13 +23,8 @@ public class ClientModel extends Observable{
         return dim;
     }
 
-    public void allocate(int dim) throws  PlaceException{
-        if(dim < MINDIM){
-            throw new PlaceException("Board too small");
-        }
-        //this.model = new ClientModel.colors[dim][dim];
-        this.dim = dim;
-        board = new PlaceBoard(dim);
+    public void allocate(PlaceBoard b) throws  PlaceException{
+        this.board = b;
     }
 
     public void close(){
