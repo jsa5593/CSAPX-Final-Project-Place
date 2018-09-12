@@ -26,17 +26,13 @@ public abstract class ConsoleApplication {
     ) {
         try {
             ConsoleApplication ptuiApp = ptuiClass.newInstance();
-            System.out.println("console application created");
             ptuiApp.cmdLineArgs = Arrays.copyOf( args, args.length );
 
             try {
-                System.out.println("CA init");
                 ptuiApp.init();
-
                 ptuiApp.eventThread = new Thread( new Runner( ptuiApp ) );
                 ptuiApp.eventThread.start();
                 ptuiApp.eventThread.join();
-                System.out.println("console application init");
 
             }
             catch( InterruptedException ie ) {
@@ -74,17 +70,11 @@ public abstract class ConsoleApplication {
                         out = new PrintWriter(
                                 new OutputStreamWriter( System.out ), true );
                         ptuiApp.go( consoleIn, out );
-                        System.out.println("console application go ");
                         out = null;
                     }
                     catch( Exception e ) {
                         e.printStackTrace();
                         System.exit(0);
-//                        e.printStackTrace();
-//                        System.out.println(e);
-//                        if ( out != null ) {
-//                            out.println( "\nRESTARTING...\n" );
-//                        }
                     }
                 } while ( out != null );
             }

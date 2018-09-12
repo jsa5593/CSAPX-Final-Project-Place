@@ -1,111 +1,113 @@
 package place.client;
 
-import place.PlaceBoard;
 import place.PlaceColor;
 import place.PlaceException;
-
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Scanner;
 
-public class PlacePTUI extends ConsoleApplication implements Observer{
+public class PlacePTUI implements Observer {
 
-    private String username;
+    private static String username;
     private ClientModel model;
     private NetworkClient serverConn;
     private Scanner userIn;
-    private PrintWriter userOut;
-    private String host;
-    private int port;
+    private static String host;
+    private static int port;
+    private long id;
 
-    @Override
     public void init() {
         try {
-            List<String> args = super.getArguments();
-            username = args.get(2);
-            host = args.get(0);
-            port = Integer.parseInt(args.get(1));
             model = new ClientModel();
-            this.serverConn = new NetworkClient(host, port, username);
-            new Thread(() -> {
-                serverConn.run();
-            }).start();
-        }
-        catch (PlaceException | ArrayIndexOutOfBoundsException | NumberFormatException e) {
+            this.model.addObserver(this);
+            this.serverConn = new NetworkClient(host, port, username, model);
+            serverConn.start();
+            System.out.println("Connected to server "+serverConn.getSock());
+            id = Thread.currentThread().getId();
+            go(new Scanner(System.in));
+        } catch (PlaceException | ArrayIndexOutOfBoundsException | NumberFormatException e) {
             System.out.print(e);
             throw new RuntimeException(e);
         }
     }
 
-
-    //---------------------takes user input and sends it to NetworkClient
-    @Override
-    public synchronized void go (Scanner userIn, PrintWriter userOut) {
+    public synchronized void go(Scanner userIn) {
         this.userIn = userIn;
-        this.userOut = userOut;
-        this.model.addObserver(this);
         try {
             Thread.sleep(1000);
         }
         catch (InterruptedException e) {
+            e.printStackTrace();
         }
         this.refresh();
+        this.getInput();
     }
 
-    public synchronized void run() {
-
-        this.model.addObserver(this);
-        System.out.println("GO");
-
-        this.refresh();
-    }
-
-    @Override
     public void stop() {
-        //pass close and username to server
-        userOut.close();
-        userIn.close();
+        serverConn.logOff();
         serverConn.close();
     }
 
 
     private void refresh() {
-        System.out.println("refresh");
+        System.out.println(model.printBoard());
+    }
+
+    private void getInput() {
         while (true) {
-            System.out.println(model.printBoard());
-            System.out.println("Enter row col color or -1 to exit: ");
-            String[] inputs = userIn.nextLine().split(" ");
-            System.out.println(inputs);
-            if (inputs.length == 1) {
+            System.out.println("Enter row col color(0-15)or R for random color or -1 to exit: ");
+            if(Thread.currentThread().getId() == id){
+                String in = userIn.nextLine().trim();
+                String[] inputs = in.split(" ");
+                if (inputs.length == 1) {
+                    if(inputs[0].equals("-1")) {
+                        stop();
+                        break;
+                    }
+                }
+                else if (inputs.length == 3) {
+                    int num;
+                    if(inputs[2].equals("R")){
+                        num = (int)(Math.random()*16);
+                    }
+                    else {
+                        num = Integer.parseInt(inputs[2]);
+                    }
+                    int row = Integer.parseInt(inputs[0]);
+                    int col = Integer.parseInt(inputs[1]);
+                    PlaceColor color = PlaceColor.values()[Integer.decode(String.valueOf(num))];
+                    serverConn.sendMove(row, col, color, username);
+                    try {
+                        Thread.sleep(5000);
+                    }
+                    catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else {
+
+                }
+            }
+            else {
                 break;
-            } else if (inputs.length == 3) {
-                int row = Integer.parseInt(inputs[0]);
-                int col = Integer.parseInt(inputs[1]);
-                System.out.println(Integer.valueOf(inputs[2], 16).intValue());
-                PlaceColor color = PlaceColor.values()[Integer.decode(inputs[2])];
-                serverConn.sendMove(row, col, color, username);
-                try {
-                    Thread.sleep(500);
-                }
-                catch (InterruptedException e) {
-                }
             }
         }
     }
 
+
     @Override
     public void update(Observable t, Object o) {
-        System.out.println("update");
-        assert t == this.model: "Update from non-model Observable";
         this.refresh();
     }
 
-    public static void main(String[] args){
-        ConsoleApplication.launch(PlacePTUI.class, args);
-        System.out.println("launch method in ptui");}
+    public static void main(String[] args) {
+        //ConsoleApplication.launch(PlacePTUI.class, args);
+        host = args[0];
+        port = Integer.parseInt(args[1]);
+        username = args[2];
+        PlacePTUI ptui = new PlacePTUI();
+        ptui.init();
+    }
 
 }

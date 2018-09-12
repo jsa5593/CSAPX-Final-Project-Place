@@ -8,33 +8,31 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class PlaceServer implements PlaceProtocol, Closeable{
+public class PlaceServer implements PlaceProtocol, Closeable {
 
     private ServerSocket server;
 
-    public PlaceServer(int port) throws PlaceException{
+    public PlaceServer(int port) throws PlaceException {
         try {
             this.server = new ServerSocket(port);
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             throw new PlaceException(e);
         }
     }
 
-    public void close(){
-        try{
+    public void close() {
+        try {
             this.server.close();
-        }
-        catch (IOException e){
+        } catch (IOException e) {
 
         }
     }
 
-    public void run(int dim, int portNumber, boolean listening){
+    public void run(int dim, int portNumber, boolean listening) {
         try {
+            NetworkServer networkServer = new NetworkServer(dim);
             while (listening) {
                 Socket sock = server.accept();
-                NetworkServer  networkServer = new NetworkServer(sock, dim);
                 PlaceClientThread client = new PlaceClientThread(sock, networkServer);
                 client.start();
             }
@@ -58,8 +56,7 @@ public class PlaceServer implements PlaceProtocol, Closeable{
         try {
             PlaceServer server = new PlaceServer(portNumber);
             server.run(dim, portNumber, listening);
-        }
-        catch (PlaceException e){
+        } catch (PlaceException e) {
             System.err.println("Can't connect to server");
             e.printStackTrace();
         }

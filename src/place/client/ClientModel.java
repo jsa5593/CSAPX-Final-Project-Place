@@ -8,9 +8,9 @@ import place.PlaceTile;
 import java.awt.*;
 import java.util.Observable;
 
-public class ClientModel extends Observable{
+public class ClientModel extends Observable {
 
-    public enum colors{
+    public enum colors {
         ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, A, B, C, D, E, F,
     }
 
@@ -19,33 +19,32 @@ public class ClientModel extends Observable{
     private int dim;
     private final static int MINDIM = 5;
 
-    public int getDim(){
+    public int getDim() {
         return dim;
     }
 
-    public void allocate(PlaceBoard b) throws  PlaceException{
+    public void allocate(PlaceBoard b) throws PlaceException {
         this.board = b;
+        dim = board.DIM;
     }
 
-    public void close(){
+    public void close() {
         super.setChanged();
         super.notifyObservers();
     }
 
-    public String printBoard(){
+    public String printBoard() {
         return board.toString();
     }
 
-    public void makeMove(PlaceTile tile){
-        int row = tile.getRow();
-        int col = tile.getCol();
-        PlaceColor color = tile.getColor();
-        String user = tile.getOwner();
-        Long time = tile.getTime();
+    public void makeMove(PlaceTile tile) {
         board.setTile(tile);
+        super.setChanged();
         super.notifyObservers();
     }
 
-    public PlaceTile getContents(int row, int col){return this.board.getTile(row, col);}
+    public PlaceTile getContents(int row, int col) {
+        return this.board.getTile(row, col);
+    }
 
 }
